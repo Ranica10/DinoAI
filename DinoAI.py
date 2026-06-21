@@ -1,4 +1,4 @@
-from mss import mss # used for screen capture
+from mss import MSS # used for screen capture
 import cv2 # used for image processing
 
 import numpy as np # transformational framework
@@ -25,6 +25,11 @@ class WebGame(Env):
         self.observation_space = Box(low=0, high=255, shape=(1,83,100), dtype=np.uint8) # img which is 83x100 pixels
         self.action_space = Discrete(3) # 3 actions: jump, duck, do nothing
 
+        # define extraction parameters for screen capture
+        self.cap = MSS()
+        self.game_region = {'top': 300, 'left': 0, 'width': 600, 'height': 700} # region of the screen where the game is located
+        self.game_over_region = {'top': 405, 'left': 630, 'width': 660, 'height': 70} # region where "Game Over" text appears
+
     # what gets called to do something in the game
     def step(self, action):
         # Action key
@@ -43,17 +48,29 @@ class WebGame(Env):
         pass
     # get a specific part of the observation of the game that we want
     def get_observation(self):
-        pass
+        # get screen capture of the game region and convert to numpy array
+        raw = np.array(self.cap.grab(self.game_region))[:,:,:3].astype(np.uint8) # keep only the RGB channels and convert to uint8
+
+        # grayscale 
+        gray = cv2.cvtColor(raw, cv2.COLOR_BGR2GRAY)
+        # resize to 83x100
+        resized = cv2.resize(gray, (100, 83))
+        # reshape 
+        channel = np.reshape(resized, (1, 83, 100))
+
+        # return the processed observation
+        return channel
+
     # checks if the game is over
     def get_done(self):
         pass
 
 env = WebGame()
 
-print(env.action_space.sample()) # test action space
-print(env.observation_space.sample()) # test observation space
-plt.imshow(env.observation_space.sample()[0]) # test observation capture
-plt.show()
+# print(env.action_space.sample()) # test action space
+# print(env.observation_space.sample()) # test observation space
 
+plt.imshow(cv2.cvtColor(env.get_observation()[0], cv2.COLOR_GRAY2RGB)) # test observation capture
+plt.show()
 
 # Test environment
