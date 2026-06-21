@@ -9,8 +9,8 @@ import pytesseract # OCR for game over detection
 import pydirectinput # used for sending key presses to the game 
 
 # Environment components
-from gym import Env # base class for our custom environment
-from gym.spaces import Discrete, Box # box: rep shape of the state space, discrete: rep possible actions in the game
+from gymnasium import Env # base class for our custom environment
+from gymnasium.spaces import Discrete, Box # box: rep shape of the state space, discrete: rep possible actions in the game
 
 # Step 1: Build the environment
 
@@ -18,9 +18,19 @@ from gym.spaces import Discrete, Box # box: rep shape of the state space, discre
 class WebGame(Env):
     # set up environment, actions, and observation shapes
     def __init__(self):
-        pass
+        # subclass model
+        super().__init__()
+
+        # setup spaces
+        self.observation_space = Box(low=0, high=255, shape=(1,83,100), dtype=np.uint8) # img which is 83x100 pixels
+        self.action_space = Discrete(3) # 3 actions: jump, duck, do nothing
+
     # what gets called to do something in the game
     def step(self, action):
+        # Action key
+        # 0: space(up), 1: duck(down), 2: do nothing(No op)
+
+
         pass
     # render function: visualize the game
     def render(self):
@@ -37,6 +47,13 @@ class WebGame(Env):
     # checks if the game is over
     def get_done(self):
         pass
+
+env = WebGame()
+
+print(env.action_space.sample()) # test action space
+print(env.observation_space.sample()) # test observation space
+plt.imshow(env.observation_space.sample()[0]) # test observation capture
+plt.show()
 
 
 # Test environment
