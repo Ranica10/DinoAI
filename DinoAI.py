@@ -15,6 +15,28 @@ from gym.spaces import Discrete, Box # box: rep shape of the state space, discre
 # Step 1: Build the environment
 
 # Create environment
+class WebGame(Env):
+    # set up environment, actions, and observation shapes
+    def __init__(self):
+        pass
+    # what gets called to do something in the game
+    def step(self, action):
+        pass
+    # render function: visualize the game
+    def render(self):
+        pass
+    # restart game
+    def reset(self):
+        pass
+    # closes down the observation
+    def close(self):
+        pass
+    # get a specific part of the observation of the game that we want
+    def get_observation(self):
+        pass
+    # checks if the game is over
+    def get_done(self):
+        pass
 
 
 # Test environment
