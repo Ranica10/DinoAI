@@ -30,6 +30,9 @@ class WebGame(Env):
         self.game_region = {'top': 300, 'left': 0, 'width': 600, 'height': 700} # region of the screen where the game is located
         self.game_over_region = {'top': 405, 'left': 630, 'width': 660, 'height': 70} # region where "Game Over" text appears
 
+        self.step_count = 0
+        self.last_done = False
+
     # Step function: take an action and return the next observation, reward, done, and info
     def step(self, action):
         # Action key
@@ -44,14 +47,22 @@ class WebGame(Env):
         if action != 2:
             # press the key specified for the action via pydirectinput
             pydirectinput.press(action_map[action])
+        
+        self.step_count += 1
 
-        # Check whether the game is done
-        done, done_cap = self.get_done()
+        # To optimize performance, check for the "done" state every 5 steps
+        if self.step_count % 5 == 0:
+            # Check whether the game is done
+            done, done_cap = self.get_done()
+            self.last_done = done
+        else:
+            done = self.last_done
+
         # Get the next observation
         next_observation = self.get_observation()
 
         # For every frame the dino is alive, reward the agent +1
-        reward = 1
+        reward = 1 if not done else -10 # if done, give a negative reward to encourage the agent to avoid dying
 
         terminated = done
         truncated = False
@@ -123,7 +134,7 @@ class WebGame(Env):
 
 # Test environment
 
-env = WebGame()
+# env = WebGame()
 
 # obs = env.get_observation()
 # plt.imshow(cv2.cvtColor(env.get_observation()[0], cv2.COLOR_GRAY2RGB)) # test observation capture
@@ -137,91 +148,3 @@ env = WebGame()
 # plt.show()
 
 # env.reset()
-
-
-# Step 2: Train the model
-
-# Callback
-
-import os # for file path management
-
-from stable_baselines3.common.callbacks import BaseCallback # for saving the model
-from stable_baselines3.common import env_checker # to check if the environment is valid
-
-print(env_checker.check_env(env)) # check if the environment is valid
-
-# Periodically saves the model during training to ensure progress is not lost
-class TrainAndLoggingCallback(BaseCallback):
-    # define how often to save and where to save the files
-    def __init__(self, check_freq: int, save_path: str, verbose=1):
-        super(TrainAndLoggingCallback, self).__init__(verbose)
-        self.check_freq = check_freq
-        self.save_path = save_path
-    
-    # runs once before training starts and creates the training folder
-    def _init_callback(self):
-        if self.save_path is not None:
-            os.makedirs(self.save_path, exist_ok=True)
-    
-    # runs every training step
-    def _on_step(self):
-        # check whether the current step count has reached a multiple of check_freq (means it is time to save the model)
-        if self.n_calls % self.check_freq == 0:
-            model_path = os.path.join(self.save_path, "best_model_{}".format(self.n_calls)) # e.g. best_model_1000
-            self.model.save(model_path)
-        # tell stable baselines to keep training
-        return True
-
-CHECKPOINT_DIR = "./DinoAI/train/"
-LOGS_DIR = "./DinoAI/logs/"
-
-# Save the model every 1000 steps
-callback = TrainAndLoggingCallback(check_freq=1000, save_path=CHECKPOINT_DIR)
-
-
-# Build DQN and train
-
-from stable_baselines3 import DQN # deep-Q network algorithm
-
-# Create model
-model = DQN(
-    policy="CnnPolicy",
-    env=env, # gym custom web env
-    tensorboard_log=LOGS_DIR,
-    verbose=1, # logging results
-    buffer_size= 800000, # how many frames we collect inside the DQN buffer
-    learning_starts=1000 # start learning after 1000 steps
-)
-
-# Training
-# model.learn(
-#     total_timesteps=5000, # how long to train for
-#     callback=callback
-# )
-
-
-# # Step 3: Test the model
-
-# # # Load final model from training
-# model = DQN.load(os.path.join("DinoAI/train", "best_model_5000"))
-
-# Play 10 games
-for episode in range(10):
-    # Start off with a new game
-    obs, info = env.reset()
-    done = False
-    
-    # Counter for total rewards
-    total_rewards = 0
-
-    while not done:
-        # get the action from the model and take a step in the environment
-        action, _ = model.predict(obs)
-        obs, reward, terminated, truncated, info = env.step(int(action))
-        time.sleep(0.01)
-
-        done = terminated or truncated # check if done
-        total_rewards += reward # increment reward
-    
-    print(f"Total reward for episode {episode}: {total_rewards} \n")
-    time.sleep(2)
