@@ -27,7 +27,7 @@ class WebGame(Env):
 
         # define extraction parameters for screen capture
         self.cap = MSS()
-        self.game_region = {'top': 350, 'left': 0, 'width': 400, 'height': 450} # region of the screen where the game is located
+        self.game_region = {'top': 350, 'left': 0, 'width': 600, 'height': 450} # region of the screen where the game is located
         self.game_over_region = {'top': 405, 'left': 630, 'width': 360, 'height': 70} # region where "Game Over" text appears
 
         self.step_count = 0
@@ -89,6 +89,9 @@ class WebGame(Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
 
+        self.step_count = 0 # reset step count
+        self.last_done = False # reset done state
+
         time.sleep(1) # wait 1 second
         
         pydirectinput.click(x=150,y=150) # click at any point on the screen
@@ -107,8 +110,17 @@ class WebGame(Env):
 
         # grayscale 
         gray = cv2.cvtColor(raw, cv2.COLOR_BGR2GRAY)
+
+        # apply thresholding to convert the image to black/white
+        _, threshold = cv2.threshold(
+            gray,
+            180,
+            255,
+            cv2.THRESH_BINARY_INV
+        )
+
         # resize to 83x100
-        resized = cv2.resize(gray, (100, 83))
+        resized = cv2.resize(threshold, (100, 83))
         # reshape 
         channel = np.reshape(resized, (1, 83, 100))
 
@@ -141,9 +153,12 @@ class WebGame(Env):
 
 # env = WebGame()
 
-# obs = env.render()
+# #obs = env.render()
 
 # obs = env.get_observation()
+# plt.imshow(obs[0])
+# plt.show()
+
 # plt.imshow(cv2.cvtColor(env.get_observation()[0], cv2.COLOR_GRAY2RGB)) # test observation capture
 # plt.show()
 

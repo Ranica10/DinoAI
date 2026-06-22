@@ -38,9 +38,15 @@ LOGS_DIR = "./DinoAI/logs/"
 callback = TrainAndLoggingCallback(check_freq=1000, save_path=CHECKPOINT_DIR)
 
 # Create environment
-env = WebGame()
+from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack # for frame stacking
 
-print(env_checker.check_env(env)) # check if the environment is valid
+# raw_env = WebGame()
+# print(env_checker.check_env(raw_env)) # check if the environment is valid
+# raw_env.close()
+
+# Wrap the environment in a DummyVecEnv, which is required for stable baselines to do frame stacking
+env = DummyVecEnv([lambda: WebGame()])
+env = VecFrameStack(env, n_stack=4) # stack 4 frames together to give the model a sense of motion and speed
 
 # Build DQN and train
 
@@ -51,8 +57,9 @@ model = DQN(
     policy="CnnPolicy",
     env=env, # gym custom web env
     tensorboard_log=LOGS_DIR,
+    device="cuda", # use GPU for training
     verbose=1, # logging results
-    buffer_size= 50_000, # how many frames we collect inside the DQN buffer
+    buffer_size= 20_000, # how many frames we collect inside the DQN buffer
     learning_starts=1_000, # start learning after 1000 steps
     batch_size=32, # how many samples to learn from at each step
     train_freq=4, # how often to train the model (every 4 steps)
@@ -65,6 +72,9 @@ model = DQN(
 
 # Training
 model.learn(
-    total_timesteps=8000, # how long to train for
-    callback=callback
+    total_timesteps=8_000, # how long to train for
+    callback=callback,
+    tb_log_name="Threshold_logs" # name of the tensorboard log file
 )
+
+model.save("./DinoAI/train/dino_ai_final")
