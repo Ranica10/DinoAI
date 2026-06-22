@@ -63,14 +63,34 @@ class WebGame(Env):
 
     # checks if the game is over
     def get_done(self):
-        pass
+        # get done screen
+        done_cap = np.array(self.cap.grab(self.game_over_region))[:,:,:3].astype(np.uint8) # keep only the RGB channels and convert to uint8
+
+        # define valid game over text
+        done_strings = ["GAME", "GAHE"]
+
+        # apply OCR to detect game over text
+        done = False
+        result = pytesseract.image_to_string(done_cap)[:4] # get the first 4 characters of extracted text
+
+        if result in done_strings:
+            done = True
+
+        return result, done, done_cap
 
 env = WebGame()
 
 # print(env.action_space.sample()) # test action space
 # print(env.observation_space.sample()) # test observation space
 
-plt.imshow(cv2.cvtColor(env.get_observation()[0], cv2.COLOR_GRAY2RGB)) # test observation capture
+# plt.imshow(cv2.cvtColor(env.get_observation()[0], cv2.COLOR_GRAY2RGB)) # test observation capture
+# plt.show()
+
+result, done, done_cap =  env.get_done()
+
+print(done)
+print(result)
+#plt.imshow(done_cap)
 plt.show()
 
 # Test environment
