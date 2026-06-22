@@ -125,23 +125,6 @@ class WebGame(Env):
 
 env = WebGame()
 
-# Play 10 games
-for episode in range(1):
-    # Start off with a new game
-    obs, info = env.reset()
-    done = False
-    
-    # Counter for total rewards
-    total_rewards = 0
-
-    while not done:
-        obs, reward, terminated, truncated, info = env.step(env.action_space.sample())
-        done = terminated or truncated
-        
-        total_rewards += reward # increment reward
-    
-    print(f"Total reward for episode {episode}: {total_rewards} \n")
-
 # obs = env.get_observation()
 # plt.imshow(cv2.cvtColor(env.get_observation()[0], cv2.COLOR_GRAY2RGB)) # test observation capture
 # plt.show()
@@ -189,10 +172,56 @@ class TrainAndLoggingCallback(BaseCallback):
         # tell stable baselines to keep training
         return True
 
-CHECKPOINT_DIR = "./train/"
-LOGS_DIR = "./logs/"
+CHECKPOINT_DIR = "./DinoAI/train/"
+LOGS_DIR = "./DinoAI/logs/"
 
-# Save the model every 1000 steps/episodes
+# Save the model every 1000 steps
 callback = TrainAndLoggingCallback(check_freq=1000, save_path=CHECKPOINT_DIR)
 
+
 # Build DQN and train
+
+from stable_baselines3 import DQN # deep-Q network algorithm
+
+# Create model
+model = DQN(
+    policy="CnnPolicy",
+    env=env, # gym custom web env
+    tensorboard_log=LOGS_DIR,
+    verbose=1, # logging results
+    buffer_size= 800000, # how many frames we collect inside the DQN buffer
+    learning_starts=1000 # start learning after 1000 steps
+)
+
+# Training
+# model.learn(
+#     total_timesteps=5000, # how long to train for
+#     callback=callback
+# )
+
+
+# # Step 3: Test the model
+
+# # # Load final model from training
+# model = DQN.load(os.path.join("DinoAI/train", "best_model_5000"))
+
+# Play 10 games
+for episode in range(10):
+    # Start off with a new game
+    obs, info = env.reset()
+    done = False
+    
+    # Counter for total rewards
+    total_rewards = 0
+
+    while not done:
+        # get the action from the model and take a step in the environment
+        action, _ = model.predict(obs)
+        obs, reward, terminated, truncated, info = env.step(int(action))
+        time.sleep(0.01)
+
+        done = terminated or truncated # check if done
+        total_rewards += reward # increment reward
+    
+    print(f"Total reward for episode {episode}: {total_rewards} \n")
+    time.sleep(2)
