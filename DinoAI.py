@@ -16,7 +16,7 @@ from gymnasium.spaces import Discrete, Box # box: rep shape of the state space, 
 
 # Create environment
 class WebGame(Env):
-    # set up environment, actions, and observation shapes
+    # Set up environment, actions, and observation shapes
     def __init__(self):
         # subclass model
         super().__init__()
@@ -30,7 +30,7 @@ class WebGame(Env):
         self.game_region = {'top': 300, 'left': 0, 'width': 600, 'height': 700} # region of the screen where the game is located
         self.game_over_region = {'top': 405, 'left': 630, 'width': 660, 'height': 70} # region where "Game Over" text appears
 
-    # what gets called to do something in the game
+    # Step function: take an action and return the next observation, reward, done, and info
     def step(self, action):
         # Action key
         # 0: space(up), 1: duck(down), 2: do nothing(No op)
@@ -58,16 +58,30 @@ class WebGame(Env):
 
         return next_observation, reward, done, info
 
-    # render function: visualize the game
+    # Render function: visualize the game
     def render(self):
-        pass
-    # restart game
-    def reset(self):
-        pass
-    # closes down the observation
+        # show the game frame (which is the current frame)
+        cv2.imshow('Game', np.array(self.cap.grab(self.game_region))[:,:,:3].astype(np.uint8))
+        
+        # If the "q" key is pressed, call the close function
+        if cv2.waitKey(0) & 0xFF == ord("q"):
+            self.close()
+
+    # Closes down the observation
     def close(self):
-        pass
-    # get a specific part of the observation of the game that we want
+        cv2.destroyAllWindows()
+
+    # Restart game
+    def reset(self):
+        time.sleep(1) # wait 1 second
+        
+        pydirectinput.click(x=150,y=150) # click at any point on the screen
+        pydirectinput.press("space") # press space to restart the game
+
+        # return the next observation of the game after restarting
+        return self.get_observation()
+    
+    # Get a specific part of the observation of the game that we want
     def get_observation(self):
         # get screen capture of the game region and convert to numpy array
         raw = np.array(self.cap.grab(self.game_region))[:,:,:3].astype(np.uint8) # keep only the RGB channels and convert to uint8
@@ -82,7 +96,7 @@ class WebGame(Env):
         # return the processed observation
         return channel
 
-    # checks if the game is over
+    # Checks if the game is over
     def get_done(self):
         # get done screen
         done_cap = np.array(self.cap.grab(self.game_over_region))[:,:,:3].astype(np.uint8) # keep only the RGB channels and convert to uint8
@@ -107,11 +121,13 @@ env = WebGame()
 # plt.imshow(cv2.cvtColor(env.get_observation()[0], cv2.COLOR_GRAY2RGB)) # test observation capture
 # plt.show()
 
-result, done, done_cap =  env.get_done()
+# result, done, done_cap =  env.get_done()
 
-print(done)
-print(result)
-#plt.imshow(done_cap)
-plt.show()
+# print(done)
+# print(result)
+# plt.imshow(done_cap)
+# plt.show()
+
+# env.reset()
 
 # Test environment
