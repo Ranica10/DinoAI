@@ -27,8 +27,8 @@ class WebGame(Env):
 
         # define extraction parameters for screen capture
         self.cap = MSS()
-        self.game_region = {'top': 300, 'left': 0, 'width': 600, 'height': 700} # region of the screen where the game is located
-        self.game_over_region = {'top': 405, 'left': 630, 'width': 660, 'height': 70} # region where "Game Over" text appears
+        self.game_region = {'top': 350, 'left': 0, 'width': 400, 'height': 450} # region of the screen where the game is located
+        self.game_over_region = {'top': 405, 'left': 630, 'width': 360, 'height': 70} # region where "Game Over" text appears
 
         self.step_count = 0
         self.last_done = False
@@ -78,7 +78,7 @@ class WebGame(Env):
         cv2.imshow('Game', np.array(self.cap.grab(self.game_region))[:,:,:3].astype(np.uint8))
         
         # If the "q" key is pressed, call the close function
-        if cv2.waitKey(0) & 0xFF == ord("q"):
+        if cv2.waitKey(1) & 0xFF == ord("q"):
             self.close()
 
     # Closes down the observation
@@ -117,18 +117,23 @@ class WebGame(Env):
 
     # Checks if the game is over
     def get_done(self):
-        # get done screen
-        done_cap = np.array(self.cap.grab(self.game_over_region))[:,:,:3].astype(np.uint8) # keep only the RGB channels and convert to uint8
+        # capture the region of the screen where the "Game Over" text appears and convert to numpy array
+        done_cap = np.array(self.cap.grab(self.game_over_region))[:, :, :3].astype(np.uint8)
 
-        # define valid game over text
-        done_strings = ["GAME", "GAHE"]
+        gray = cv2.cvtColor(done_cap, cv2.COLOR_BGR2GRAY) # grayscale
 
         # apply OCR to detect game over text
-        done = False
-        result = pytesseract.image_to_string(done_cap)[:4] # get the first 4 characters of extracted text
+        result = pytesseract.image_to_string(gray)
+        cleaned = result.upper().replace(" ", "").replace("\n", "").strip() # clean the OCR result to remove spaces
 
-        if result in done_strings:
-            done = True
+        done = (
+            "GAME" in cleaned or
+            "GANE" in cleaned or
+            "GAHE" in cleaned or
+            "GAN" in cleaned
+        )
+
+        # print("OCR:", repr(result), "CLEANED:", repr(cleaned), "DONE:", done)
 
         return done, done_cap
 
@@ -136,14 +141,16 @@ class WebGame(Env):
 
 # env = WebGame()
 
+# obs = env.render()
+
 # obs = env.get_observation()
 # plt.imshow(cv2.cvtColor(env.get_observation()[0], cv2.COLOR_GRAY2RGB)) # test observation capture
 # plt.show()
 
-# result, done, done_cap =  env.get_done()
+# done, done_cap =  env.get_done()
 
 # print(done)
-# print(result)
+
 # plt.imshow(done_cap)
 # plt.show()
 
