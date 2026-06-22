@@ -34,9 +34,30 @@ class WebGame(Env):
     def step(self, action):
         # Action key
         # 0: space(up), 1: duck(down), 2: do nothing(No op)
+        action_map = {
+            0: 'space',
+            1: 'down',
+            2: 'no_op'
+        }
 
+        # If no operation is given, do the action
+        if action != 2:
+            # press the key specified for the action via pydirectinput
+            pydirectinput.press(action_map[action])
 
-        pass
+        # Check whether the game is done
+        done, done_cap = self.get_done()
+        # Get the next observation
+        next_observation = self.get_observation()
+
+        # For every frame the dino is alive, reward the agent +1
+        reward = 1
+
+        # Info dictionary (for stable baselines)
+        info = {}
+
+        return next_observation, reward, done, info
+
     # render function: visualize the game
     def render(self):
         pass
