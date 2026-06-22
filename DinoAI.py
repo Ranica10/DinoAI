@@ -53,10 +53,13 @@ class WebGame(Env):
         # For every frame the dino is alive, reward the agent +1
         reward = 1
 
+        terminated = done
+        truncated = False
+
         # Info dictionary (for stable baselines)
         info = {}
 
-        return next_observation, reward, done, info
+        return next_observation, reward, terminated, truncated, info
 
     # Render function: visualize the game
     def render(self):
@@ -72,14 +75,19 @@ class WebGame(Env):
         cv2.destroyAllWindows()
 
     # Restart game
-    def reset(self):
+    def reset(self, seed=None, options=None):
+        super().reset(seed=seed)
+
         time.sleep(1) # wait 1 second
         
         pydirectinput.click(x=150,y=150) # click at any point on the screen
         pydirectinput.press("space") # press space to restart the game
 
+        obs = self.get_observation()
+        info = {}
+
         # return the next observation of the game after restarting
-        return self.get_observation()
+        return obs, info
     
     # Get a specific part of the observation of the game that we want
     def get_observation(self):
@@ -111,13 +119,30 @@ class WebGame(Env):
         if result in done_strings:
             done = True
 
-        return result, done, done_cap
+        return done, done_cap
+
+# Test environment
 
 env = WebGame()
 
-# print(env.action_space.sample()) # test action space
-# print(env.observation_space.sample()) # test observation space
+# Play 10 games
+for episode in range(1):
+    # Start off with a new game
+    obs, info = env.reset()
+    done = False
+    
+    # Counter for total rewards
+    total_rewards = 0
 
+    while not done:
+        obs, reward, terminated, truncated, info = env.step(env.action_space.sample())
+        done = terminated or truncated
+        
+        total_rewards += reward # increment reward
+    
+    print(f"Total reward for episode {episode}: {total_rewards} \n")
+
+# obs = env.get_observation()
 # plt.imshow(cv2.cvtColor(env.get_observation()[0], cv2.COLOR_GRAY2RGB)) # test observation capture
 # plt.show()
 
@@ -130,4 +155,17 @@ env = WebGame()
 
 # env.reset()
 
-# Test environment
+
+# Step 2: Train the model
+
+# Callback
+
+import os # for file path management
+
+from stable_baselines3.common.callbacks import BaseCallback # for saving the model
+from stable_baselines3.common import env_checker # to check if the environment is valid
+
+print(env_checker.check_env(env)) # check if the environment is valid
+
+
+# Build DQN and train
