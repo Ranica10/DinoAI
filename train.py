@@ -71,7 +71,7 @@ model = DQN(
     batch_size=32, # how many samples to learn from at each step
     train_freq=4, # how often to train the model (every 4 steps)
     target_update_interval=1_000, # how often to update the target network
-    exploration_fraction=0.4, # what fraction of the training period to spend on exploration (vs exploitation)
+    exploration_fraction=0.3, # what fraction of the training period to spend on exploration (vs exploitation)
     exploration_initial_eps=1.0, # initial exploration rate
     exploration_final_eps=0.05, # final exploration rate
 )
@@ -83,7 +83,7 @@ model.learn(
     total_timesteps=20_000, # how long to train for
     callback=callback,
     reset_num_timesteps=False, # continue training from the previous model (do not reset the timestep count)
-    tb_log_name="Optimized_Test_2_Logs" # name of the tensorboard log file
+    tb_log_name="Exploration_Rate_0_3" # name of the tensorboard log file
 )
 
 model.save("./DinoAI/train/dino_ai_final")
