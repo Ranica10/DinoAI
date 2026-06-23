@@ -27,12 +27,12 @@ for episode in range(10):
     # Counter for total rewards
     total_rewards = 0
 
-    while not done:
+    while not done[0]: # while the game is not over
         # get the action from the model and take a step in the environment
         action, _ = model.predict(obs, deterministic=True) # deterministic: use the action with the highest predicted reward
         obs, reward, done, info = env.step(action)
 
-        total_rewards += reward # increment reward
+        total_rewards += reward[0] # increment reward
         time.sleep(0.01)
     
     print(f"Total reward for episode {episode}: {total_rewards} \n")

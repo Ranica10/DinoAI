@@ -62,7 +62,14 @@ class WebGame(Env):
         next_observation = self.get_observation()
 
         # For every frame the dino is alive, reward the agent +1
-        reward = 1 if not done else -10 # if done, give a negative reward to encourage the agent to avoid dying
+
+        # Penalize unnecessary ducking (action 1) when not needed
+        if action == 1:
+            reward = 0.5  # ducking is less "good" than doing nothing or jumping
+        elif not done:
+            reward = 1 + (self.step_count * 0.001)  # increasing reward over time
+        else:
+            reward = -10 # if done, give a negative reward to encourage the agent to avoid dying
 
         terminated = done
         truncated = False
