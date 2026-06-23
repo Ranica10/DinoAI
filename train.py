@@ -59,31 +59,31 @@ env = VecFrameStack(env, n_stack=4)
 from stable_baselines3 import DQN # deep-Q network algorithm
 
 # Create model
-# model = DQN(
-#     policy="CnnPolicy",
-#     env=env, # gym custom web env
-#     tensorboard_log=LOGS_DIR,
-#     device="cuda", # use GPU for training
-#     verbose=1, # logging results
-#     buffer_size= 50_000, # how many frames we collect inside the DQN buffer
-#     learning_starts=1_000, # start learning after 1000 steps
-#     learning_rate=1e-4, # start learning after 1000 steps
-#     batch_size=32, # how many samples to learn from at each step
-#     train_freq=4, # how often to train the model (every 4 steps)
-#     target_update_interval=1_000, # how often to update the target network
-#     exploration_fraction=0.2, # what fraction of the training period to spend on exploration (vs exploitation)
-#     exploration_initial_eps=1.0, # initial exploration rate
-#     exploration_final_eps=0.05, # final exploration rate
-# )
+model = DQN(
+    policy="CnnPolicy",
+    env=env, # gym custom web env
+    tensorboard_log=LOGS_DIR,
+    device="cuda", # use GPU for training
+    verbose=1, # logging results
+    buffer_size= 50_000, # how many frames we collect inside the DQN buffer
+    learning_starts=1_000, # start learning after 1000 steps
+    learning_rate=1e-4, # start learning after 1000 steps
+    batch_size=32, # how many samples to learn from at each step
+    train_freq=4, # how often to train the model (every 4 steps)
+    target_update_interval=1_000, # how often to update the target network
+    exploration_fraction=0.4, # what fraction of the training period to spend on exploration (vs exploitation)
+    exploration_initial_eps=1.0, # initial exploration rate
+    exploration_final_eps=0.05, # final exploration rate
+)
 
-model = DQN.load("./DinoAI/train/dino_ai_final", env=env, device="cuda") # load the last model from training so far to continue training from there
+# model = DQN.load("./DinoAI/train/dino_ai_final", env=env, device="cuda") # load the last model from training so far to continue training from there
 
 # Training
 model.learn(
     total_timesteps=20_000, # how long to train for
     callback=callback,
     reset_num_timesteps=False, # continue training from the previous model (do not reset the timestep count)
-    tb_log_name="Test_Logs" # name of the tensorboard log file
+    tb_log_name="Optimized_Test_2_Logs" # name of the tensorboard log file
 )
 
 model.save("./DinoAI/train/dino_ai_final")
