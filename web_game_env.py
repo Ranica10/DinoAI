@@ -5,7 +5,6 @@ import numpy as np # transformational framework
 import time # for pausing
 from matplotlib import pyplot as plt # visualize captured frames
 
-import pytesseract # OCR for game over detection
 import pydirectinput # used for sending key presses to the game 
 
 # Environment components
@@ -28,7 +27,7 @@ class WebGame(Env):
         # define extraction parameters for screen capture
         self.cap = MSS()
         self.game_region = {'top': 350, 'left': 0, 'width': 600, 'height': 450} # region of the screen where the game is located
-        self.game_over_region = {'top': 405, 'left': 630, 'width': 360, 'height': 70} # region where "Game Over" text appears
+        self.game_over_region = {'top': 405, 'left': 630, 'width': 330, 'height': 70} # region where "Game Over" text appears
 
         self.step_count = 0
         self.last_done = False
@@ -136,23 +135,42 @@ class WebGame(Env):
 
     # Checks if the game is over
     def get_done(self):
-        # capture the region of the screen where the "Game Over" text appears and convert to numpy array
+        # grab the game over region and convert to grayscale
         done_cap = np.array(self.cap.grab(self.game_over_region))[:, :, :3].astype(np.uint8)
+        gray = cv2.cvtColor(done_cap, cv2.COLOR_BGR2GRAY)
 
-        gray = cv2.cvtColor(done_cap, cv2.COLOR_BGR2GRAY) # grayscale
+        # crop only the exact area where GAME OVER appears inside done_cap (to avoid birds and other objects in the background)
+        roi = gray[20:70, 30:330]
 
-        # apply OCR to detect game over text
-        result = pytesseract.image_to_string(gray)
-        cleaned = result.upper().replace(" ", "").replace("\n", "").strip() # clean the OCR result to remove spaces
+        # detect dark gray GAME OVER letters
+        mask = roi < 140
 
+        # create a mask where dark pixels are True
+        ys, xs = np.where(mask)
+
+        # if there are no dark pixels at all, then GAME OVER is definitely not shown
+        if len(xs) == 0:
+            return False, done_cap
+
+        # calculate the width and height of the detected dark object/text
+        text_width = xs.max() - xs.min() # the diff btwn leftmost and rightmost pixels gives the width
+        # text_height = ys.max() - ys.min() # height
+
+        roi_h, roi_w = roi.shape # get the height and width of the ROI
+        
+        width_ratio = text_width / roi_w # calc how much of the cropped region width is covered by dark pixels
+        # height_ratio = text_height / roi_h # height
+        
+        # calculate what percentage of the crop is dark pixels
+        dark_ratio = np.sum(mask) / mask.size
+
+        # print("dark:", dark_ratio, "width:", width_ratio, "height:", height_ratio)
+
+        # the game is only done if all 2 conditions are met
         done = (
-            "GAME" in cleaned or
-            "GANE" in cleaned or
-            "GAHE" in cleaned or
-            "GAN" in cleaned
+            dark_ratio > 0.15 and # at least 15% of the cropped region is dark pixels
+            width_ratio > 0.75 # at least 75% of the cropped region width is covered by dark pixels
         )
-
-        # print("OCR:", repr(result), "CLEANED:", repr(cleaned), "DONE:", done)
 
         return done, done_cap
 
@@ -168,6 +186,8 @@ class WebGame(Env):
 
 # plt.imshow(cv2.cvtColor(env.get_observation()[0], cv2.COLOR_GRAY2RGB)) # test observation capture
 # plt.show()
+
+# env = WebGame()
 
 # done, done_cap =  env.get_done()
 
